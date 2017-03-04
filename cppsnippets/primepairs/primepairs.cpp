@@ -29,21 +29,19 @@ int main ()
 		if ((isa_prime_num (i)) && (isa_prime_num (i+2)))
 		{
 			cout << i << " " << (i+2) << "\n";
-		}	
+		}
 	}
 
 }
 
 
-//prime_num?: Int -> Boolean
+//isa_prime_num: Int -> Boolean
 //Is the number a prime number?
 bool isa_prime_num (int num)
 {
 	for (int n=2; n<(num-1); n++)
 	{
-		if (!(num%n)) return false; 
+		if (!(num%n)) return false;
 	}
-
 	return true;
 }
-
