@@ -14,7 +14,7 @@ import decimal
 decimal.getcontext().prec = 30
 
 #define constants
-side_length = 10000 #length of probability square
+side_length = 100000 #length of probability square
 
 #total number of "dice rolls"
 num_rolls = input("Enter in a number of rolls:")
