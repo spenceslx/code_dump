@@ -25,8 +25,51 @@ posn3 = (-1, 20)
 posn4 = (4,20)
 
 
-#posn_average: Array Array -> Number
-#   averages the number of the surrounding elements
+
+#wishlist
+#iteration, keep track of the changes between each iteration
+#with an array of the same size. Once each element has a small
+#enough value per iteration, say 0.01, then convergence has been
+#reached
+
+#partial_converge_array: Array [listof Numbers] [listof Numbers] -> Array
+#   smooths array while fixing the row indexed by Number1,
+#   and the column indexed by Number2. If either one not
+#   necessary, just input -1 in place and it will not be fixed.
+#   i.e. imagine a wall thats at a certain potential, it should
+#   remain unchanged.
+#update: should fix to more than one number(ex if more than one row)
+def partial_converge_array (ar, row_fix, col_fix):
+    size = ar.shape
+    rmax = size[0]
+    cmax = size[1]
+    new_ar = numpy.zeros(size, dtype = float)
+    for r in range(0, rmax):
+        for c in range(0, cmax):
+            if r in row_fix or c in col_fix:
+                new_ar[r,c] = ar[r,c]
+                continue
+            new_ar[r,c] = posn_average(ar, (r,c))
+    return new_ar
+
+
+
+#entire_converge_array: Array -> Array
+#   smooths entire array though the averaging of each value
+#   with the surrounding values. One iteration
+def entire_converge_array (ar):
+    size = ar.shape
+    rmax = size[0]
+    cmax = size[1]
+    new_ar = numpy.zeros(size, dtype = float)
+    for r in range(0, rmax):
+        for c in range(0, cmax):
+            new_ar[r,c] = posn_average(ar, (r,c))
+    return new_ar
+
+
+#posn_average: Array Posn -> Number
+#   averages the number of the posn and the surrounding elements
 #   Prereq: posn must be inside of matrix
 def posn_average (ar, posn):
     dat = posn_sum(ar, posn)
@@ -38,12 +81,15 @@ def posn_average (ar, posn):
 
 
 #sum: Array Posn -> (sum, #_elements)
-#   adds surrounding positions, but also determines
+#   adds values of posn and surrounding positions, but also determines
 #   whether or not they are valid values (ie edge or corner)
 def posn_sum (ar, posn):
     size = ar.shape #tuple (x,y)
     sum = (0.0,0.0)
 
+    if posn_inside_huh(ar, posn, size):
+        itself = ar[posn[0], posn[1]]
+        sum = (sum[0] + itself, sum[1] +1)
     if posn_inside_huh(ar, (posn[0] - 1,posn[1]), size): #up
         up = ar[posn[0] - 1, posn[1]]
         sum = (sum[0] + up, sum[1] + 1)
@@ -74,3 +120,5 @@ def posn_inside_huh (ar, posn, size):
         return False
     else:
         return True
+
+print partial_converge_array(array1, (0,1), (-1))
