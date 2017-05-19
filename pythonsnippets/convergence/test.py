@@ -13,10 +13,12 @@ posn6 = (1,1)
 posn7 = (2,2)
 
 array1 = np.array([[4,5,6], [1,2,3]])
-array2 = np.array([[2,1,5],[7,10,3],[3,4,0]])
 array1_avg = np.array([[10.0/3.0,4.25,14.0/3.0],
                        [7.0/3.0,2.75,11.0/3.0]])
-array1_fix0 = ([[4,5,6], [7.0/3.0,2.75,11.0/3.0]])
+array1_fix0n = ([[4,5,6], [7.0/3.0,2.75,11.0/3.0]])
+array1_fixn1 = ([[10.0/3.0,5,14.0/3.0],[7.0/3.0,2,11.0/3.0]])
+array2 = np.array([[2,1,5],[7,10,3],[3,4,0]])
+
 
 
 #start test from bottom
@@ -25,7 +27,10 @@ class Test(unittest.TestCase):
     def test_partial_converge_array1(self):
         self.assertTrue(np.array_equal(convergence.partial_converge_array(array1,(0,1),(-1)),array1))
     def test_partial_converge_array2(self):
-        self.assertTrue(np.array_equal(convergence.partial_converge_array(array1,(0),(-1)),array1_fix0))
+        self.assertTrue(np.array_equal(convergence.partial_converge_array(array1,(0),(-1)),array1_fix0n))
+    def test_partial_converge_array3(self):
+        self.assertTrue(np.array_equal(convergence.partial_converge_array(array1,(-1),(1)),array1_fixn1))
+
 
     def test_entire_converge_array1(self):
         self.assertTrue(np.array_equal(convergence.entire_converge_array(array1),array1_avg))

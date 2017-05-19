@@ -38,20 +38,23 @@ posn4 = (4,20)
 #   necessary, just input -1 in place and it will not be fixed.
 #   i.e. imagine a wall thats at a certain potential, it should
 #   remain unchanged.
-#update: should fix to more than one number(ex if more than one row)
 def partial_converge_array (ar, row_fix, col_fix):
     size = ar.shape
     rmax = size[0]
     cmax = size[1]
     new_ar = numpy.zeros(size, dtype = float)
-    for r in range(0, rmax):
-        for c in range(0, cmax):
-            if r in row_fix or c in col_fix:
-                new_ar[r,c] = ar[r,c]
-                continue
+    for r in range(rmax):
+        for c in range(cmax):
+            try:
+                if r in row_fix or c in col_fix:
+                    new_ar[r,c] = ar[r,c]
+                    continue
+            except:   #case where either is an int; TypeError
+                if r==row_fix or c==col_fix:
+                    new_ar[r,c] = ar[r,c]
+                    continue
             new_ar[r,c] = posn_average(ar, (r,c))
     return new_ar
-
 
 
 #entire_converge_array: Array -> Array
@@ -62,8 +65,8 @@ def entire_converge_array (ar):
     rmax = size[0]
     cmax = size[1]
     new_ar = numpy.zeros(size, dtype = float)
-    for r in range(0, rmax):
-        for c in range(0, cmax):
+    for r in range(rmax):
+        for c in range(cmax):
             new_ar[r,c] = posn_average(ar, (r,c))
     return new_ar
 
