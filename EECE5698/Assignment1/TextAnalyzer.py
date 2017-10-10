@@ -14,8 +14,6 @@ def stripNonAlpha(s):
 
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Text Analysis through TFIDF computation',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('mode', help='Mode of operation',choices=['TF','IDF','TFIDF','SIM','TOP'])
@@ -93,14 +91,10 @@ if __name__ == "__main__":
         # strings representing pairs of the form (TERM,VAL),
         # where TERM is a lowercase letter-only string and VAL is a numeric value.
         wf = sc.textFile(args.input)\
-               .map(lambda line: line[:1] + line[2:])\
-               .map(lambda line: (stripNonAlpha(line.split()[0]),\
-                                  line.split()[1].replace(")", "")))
+               .map(lambda line: eval(line))
 
         idf = sc.textFile(args.idfvalues)\
-                .map(lambda line: line[:1] + line[2:])\
-                .map(lambda line: (stripNonAlpha(line.split()[0]),\
-                                   line.split()[1].replace(")", "")))
+                .map(lambda line: eval(line))
 
         wf.join(idf)\
           .mapValues(lambda (freq, idf): int(freq)*float(idf))\
@@ -118,24 +112,22 @@ if __name__ == "__main__":
         outputfile = open(args.output, 'w')
 
         tfidf1 = sc.textFile(args.input)\
-                   .map(lambda line: line[:1] + line[2:])\
-                   .map(lambda line: (stripNonAlpha(line.split()[0]),\
-                                      line.split()[1].replace(")", "")))
+                   .map(lambda line: eval(line))
 
-        tfidf2 = sc.textFile(args.otherfile)\
-                   .map(lambda line: line[:1] + line[2:])\
-                   .map(lambda line: (stripNonAlpha(line.split()[0]),\
-                                      line.split()[1].replace(")", "")))
+        tfidf2 = sc.textFile(args.other)\
+                   .map(lambda line: eval(line))
 
         numerator = tfidf1.join(tfidf2)\
-                          .mapValues(lambda (tfidf1_val, tfidf2_val): tfidf1_val*tfidf2_val)\
                           .values()\
+                          .map(lambda (tfidf1_val, tfidf2_val): tfidf1_val*tfidf2_val)\
                           .reduce(lambda val1, val2: val1+val2)
 
         tfidf1_sumsq = tfidf1.values()\
-                             .reduce(lambda val1, val2: val1+ val2)
+                             .map(lambda val: val**2)\
+                             .reduce(lambda val1, val2: val1+val2)
 
         tfidf2_sumsq = tfidf2.values()\
-                             .reduce(lambda val1, val2: val1+ val2)
+                             .map(lambda val: val**2)\
+                             .reduce(lambda val1, val2: val1+val2)
 
         print>>outputfile, numerator/np.sqrt(tfidf1_sumsq*tfidf2_sumsq)
