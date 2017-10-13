@@ -35,8 +35,8 @@ if __name__ == "__main__":
         # are also removed
         textrdd = sc.textFile(args.input)
         textrdd.flatMap(lambda line: line.split())\
-               .map(lambda word: toLowerCase(word))\
-               .map(lambda word: stripNonAlpha(word))\
+               .map(toLowerCase)\
+               .map(stripNonAlpha)\
                .map(lambda word: (word, 1))\
                .reduceByKey(lambda val1, val2: val1 + val2)\
                .filter(lambda pair: pair[0] != '')\
@@ -48,14 +48,9 @@ if __name__ == "__main__":
         # where TERM is a string and VAL is a numeric value. Find the pairs with the top 20 values,
         # and store result in args.output
         outputfile = open(args.output, 'w')
-        textrdd = sc.textFile(args.input)
-        top20 = textrdd.flatMap(lambda line: line.split())\
-                       .map(lambda word: toLowerCase(word))\
-                       .map(lambda word: stripNonAlpha(word))\
-                       .map(lambda word: (word, 1))\
-                       .reduceByKey(lambda val1, val2: val1 + val2)\
-                       .filter(lambda pair: pair[0] != '')\
-                       .takeOrdered(20,lambda pair: -pair[1])
+        top20 = sc.textFile(args.input)\
+                  .map(eval)
+                  .takeOrdered(20,lambda pair: -pair[1])
         #print each top20 in the given output file
         for element in top20:
             print>>outputfile, element
@@ -74,14 +69,14 @@ if __name__ == "__main__":
         num_tf = len(set(dirrdd.keys().collect()))
 
         dirrdd.flatMapValues(lambda line: line.split())\
-              .mapValues(lambda word: toLowerCase(word))\
-              .mapValues(lambda word: stripNonAlpha(word))\
+              .mapValues(toLowerCase)\
+              .mapValues(stripNonAlpha)\
               .filter(lambda word: word[1] != '')\
               .map(lambda (tf,word): (word,tf))\
               .combineByKey(lambda tf: [tf],\
                             lambda l, tf: l + [tf],\
                             lambda l1, l2: l1 + l2)\
-              .map(lambda (word,l): (word,np.log(num_tf/len(set(l)))))\
+              .map(lambda (word,l): (word,np.log(num_tf/(1.*len(set(l))))))\
               .saveAsTextFile(args.output)
 
 
@@ -91,10 +86,10 @@ if __name__ == "__main__":
         # strings representing pairs of the form (TERM,VAL),
         # where TERM is a lowercase letter-only string and VAL is a numeric value.
         wf = sc.textFile(args.input)\
-               .map(lambda line: eval(line))
+               .map(eval)
 
         idf = sc.textFile(args.idfvalues)\
-                .map(lambda line: eval(line))
+                .map(eval)
 
         wf.join(idf)\
           .mapValues(lambda (freq, idf): int(freq)*float(idf))\
@@ -112,10 +107,10 @@ if __name__ == "__main__":
         outputfile = open(args.output, 'w')
 
         tfidf1 = sc.textFile(args.input)\
-                   .map(lambda line: eval(line))
+                   .map(eval)
 
         tfidf2 = sc.textFile(args.other)\
-                   .map(lambda line: eval(line))
+                   .map(eval)
 
         numerator = tfidf1.join(tfidf2)\
                           .values()\
