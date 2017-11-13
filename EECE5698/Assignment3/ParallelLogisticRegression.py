@@ -10,40 +10,40 @@ from pyspark import SparkContext
 def readDataRDD(input_file,spark_context):
     """  Read data from an input file. Each line of the file contains tuples of the form
 
-                    (x,y)  
+                    (x,y)
 
-         x is a dictionary of the form:                 
+         x is a dictionary of the form:
 
            { "feature1": value, "feature2":value, ...}
 
          and y is a binary value +1 or -1.
 
          The return value is an RDD containing tuples of the form
-                 (SparseVector(x),y)             
+                 (SparseVector(x),y)
 
-    """ 
+    """
     return spark_context.textFile(input_file)\
                         .map(eval)\
                         .map(lambda (x,y):(SparseVector(x),y))
 
 
 
-	
-def getAllFeaturesRDD(dataRDD):                
+
+def getAllFeaturesRDD(dataRDD):
     """ Get all the features present in grouped dataset dataRDD.
- 
+
 	The input is:
-            - dataRDD containing pairs of the form (SparseVector(x),y).  
+            - dataRDD containing pairs of the form (SparseVector(x),y).
 
         The return value is an RDD containing the union of all unique features present in sparse vectors inside dataRDD.
-    """                
-    pass   
-
-def totalLossRDD(dataRDD,beta,lam = 0.0):
+    """
     pass
 
+def totalLossRDD(dataRDD,beta,lam = 0.0):
+    return dataRDD.map(lambda data = totalLoss(data, beta, lam))
+
 def gradTotalLossRDD(dataRDD,beta,lam = 0.0):
-    pass  
+    return dataRDD.map(lambda data = )
 
 
 
