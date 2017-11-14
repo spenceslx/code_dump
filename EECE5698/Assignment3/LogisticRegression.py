@@ -79,7 +79,8 @@ def getAllFeatures(data):
 
 def logisticLoss(beta,x,y):
     """
-        Given sparse vector beta, a sparse vector x, and a binary value y in {-1,+1}, compute the logistic loss
+        Given sparse vector beta, a sparse vector x, and a binary value y in {-1,+1},
+        compute the logistic loss
 
                 l(β;x,y) = log( 1.0 + exp(-y * <β,x>) )
 
@@ -107,7 +108,7 @@ def gradLogisticLoss(beta,x,y):
 
 
     """
-    return (-y / (1.0 + exp(y * beta.dot(x)))) * x
+    return (-y / (1.0 + np.exp(y * beta.dot(x)))) * x
 
 
 
@@ -138,7 +139,7 @@ def gradTotalLoss(data,beta, lam = 0.0):
             - beta: a sparse vector β
             - lam: the regularization parameter λ
     """
-    loss = 0.0
+    loss = SparseVector({})
     for (x,y) in data:
         loss += gradLogisticLoss(beta,x,y)
     return loss + (2 * lam * beta)
@@ -204,12 +205,12 @@ def test(data,beta):
     FP = [(x,y) for (x,y) in P if y == -1]
     TN = [(x,y) for (x,y) in N if y == -1]
     FN = [(x,y) for (x,y) in N if y == 1]
-    TPlen = TP.len()
-    FPlen = FP.len()
-    TNlen = TN.len()
-    FNlen = FN.len()
+    TPlen = float(len(TP))
+    FPlen = float(len(FP))
+    TNlen = float(len(TN))
+    FNlen = float(len(FN))
 
-    ACC = (TPlen + TNlen / (P.len() + N.len()))
+    ACC = (TPlen + TNlen) / (len(P) + len(N))
     PRE = TPlen / (TPlen + FPlen)
     REC = TPlen / (TPlen + FNlen)
 
@@ -251,7 +252,7 @@ def train(data,beta_0, lam,max_iter,eps,test_data=None):
         obj = totalLoss(data,beta,lam)
 
         grad = gradTotalLoss(data,beta,lam)
-	gradNormSq = grad.dot(grad)
+        gradNormSq = grad.dot(grad)
         gradNorm = np.sqrt(gradNormSq)
 
         fun = lambda x: totalLoss(data,x,lam)

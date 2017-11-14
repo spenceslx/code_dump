@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
- 
+from SparseVector import SparseVector
+
 
 
 def estimateGrad(fun,x,delta):
@@ -12,7 +13,3 @@ def estimateGrad(fun,x,delta):
 	 e[key] = 1.0
          grad[key] = (fun(x+delta * e) - fun(x))/delta
      return grad
-
- 
-
-

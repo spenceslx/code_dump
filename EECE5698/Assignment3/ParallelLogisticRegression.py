@@ -40,10 +40,10 @@ def getAllFeaturesRDD(dataRDD):
     pass
 
 def totalLossRDD(dataRDD,beta,lam = 0.0):
-    return dataRDD.map(lambda data = totalLoss(data, beta, lam))
+    return dataRDD.map(lambda data: totalLoss(data, beta, lam))
 
 def gradTotalLossRDD(dataRDD,beta,lam = 0.0):
-    return dataRDD.map(lambda data = )
+    return dataRDD.map(lambda data: )
 
 
 
