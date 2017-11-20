@@ -13,8 +13,8 @@ def readBeta(input):
     beta = SparseVector({})
     with open(input,'r') as fh:
         for  line in fh:
-            (feat,val) = eval(line.strip())
-            beta[feat] = val
+            (feat,val) = line.strip('() \n').split(',')
+            beta[feat] = eval(val)
     return beta
 
 
@@ -27,7 +27,7 @@ def writeBeta(output,beta):
     """
     with open(output,'w') as fh:
         for key in beta:
-            fh.write('(%s,%f)\n' % (key,beta[key]))
+            fh.write('("%s",%f)\n' % (key,beta[key]))
 
 
 

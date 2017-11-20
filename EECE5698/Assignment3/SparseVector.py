@@ -33,7 +33,7 @@ class SparseVector(dict):
 
     def norm(self,p=2):
         """ Returns the P-th Minkowski norm ||x||p of the SparseVector"""
-        return sum([value**p for value in self]) ** (1./p)
+        return sum([self[value]**p for value in self]) ** (1./p)
 
 
     def __add__(self,other):
