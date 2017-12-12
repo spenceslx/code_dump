@@ -24,7 +24,7 @@ input_file.close()
 #make directory for folds
 if (os.path.exists(args.dirname) == False):
     os.makedirs(args.dirname)
-
+    
 #write folds in directory
 segment_size = int(len(data)/int(args.kfolds))
 folds = [segment_size*x for x in range(0,int(args.kfolds))] #need to build [0, 3619, 7832, ... ]
