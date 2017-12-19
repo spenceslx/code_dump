@@ -22,7 +22,7 @@ def predict(u,v):
         The return value is
            - the inner product <u,v>
     """
-    return u.innerProduct(v)
+    return np.inner(u,v)
 
 def pred_diff(r,u,v):
     """ Given a rating, a user profile u and an item profile v, compute the difference between the prediction and actual rating
@@ -135,8 +135,12 @@ def generateItemProfiles(R,d,seed,sparkContext,N):
 
         The return value is an RDD containing the item profiles
     """
-    pass
-
+    V = R.map(lambda (i,j,rij): j).distinct(numPartitions=N)
+    numItems = V.count()
+    randRDD = RandomRDDs.normalVectorRDD(sparkContext, numItems, d, numPartitions=N, seed=seed)
+    V = V.zipWithIndex().map(swap)
+    randRDD = randRDD.zipWithIndex().map(swap)
+    return V.join(randRDD, numPartitions=N).values()
 
 
 
@@ -147,7 +151,7 @@ def joinAndPredictAll(R,U,V,N):
         Inputs are:
          - R: an RDD containing tuples of the form (i,j,rij)
          - U: an RDD containing tuples of the form (i,ui)
-         - V: an RDD containing tuples of the form (i,vj)
+         - V: an RDD containing tuples of the form (j,vj)
          - N: the number of partitions to be used during joins, etc.
 
         The output is a joined RDD containing tuples of the form:
@@ -159,7 +163,12 @@ def joinAndPredictAll(R,U,V,N):
         is the prediction difference.
 
     """
-    pass
+    R = R.map(lambda (i, j, rij): (i, (j, rij)))
+    joinedRDD = U.join(R, numPartitions=N)\
+                 .map(lambda (i, (ui, (j, rij))): (j, (i, ui, rij)))\
+                 .join(V, numPartitions=N)\
+                 .map(lambda (j, ((i, ui, rij), vj)): (i, j ,pred_diff(rij, ui, vj), ui, vj))
+    return joinedRDD
 
 
 
@@ -173,7 +182,8 @@ def SE(joinedRDD):
 
         The output is the SE.
     """
-    pass
+    return joinedRDD.map(lambda (i, j, delij, ui, vj): delij**2)\
+                    .reduce(add)
 
 def normSqRDD(profileRDD,param):
     """ Receives as input an RDD of profiles (e.g., U) as well as a parameter (e.g., λ) and computes the square of norms:
@@ -186,7 +196,9 @@ def normSqRDD(profileRDD,param):
         The return value is:
         λ Σ_i ||ui||_2^2
     """
-    pass
+    normsq = profileRDD.map(lambda (i, u): np.sqrt(sum(u**2)))\
+                       .reduce(add)
+    return normsq * param
 
 def adaptU(joinedRDD,gamma,lam,N):
     """ Receives as input a joined RDD
@@ -207,8 +219,12 @@ def adaptU(joinedRDD,gamma,lam,N):
 
         The return value  is an RDD with tuples of the form (i,ui). The returned rdd contains exactly N partitions.
     """
-    pass
-
+    old_ui = joinedRDD.map(lambda (i, j, delij, ui, vj): (i, ui))
+    new_ui = joinedRDD.map(lambda (i, j, delij, ui, vj): (i, (gradient_u(delij,vj,ui) - 2*lam*ui)))\
+                    .reduceByKey(add, numPartitions=N)\
+                    .join(old_ui, numPartitions=N)\
+                    .map(lambda (i, (change, ui)): (i, ui - gamma*change))
+    return new_ui
 
 
 def adaptV(joinedRDD,gamma,mu,N):
@@ -230,9 +246,12 @@ def adaptV(joinedRDD,gamma,mu,N):
 
         The return value  is an RDD with tuples of the form (i,vi). The returned rdd contains exactly N partitions.
     """
-
-    pass
-
+    old_vj = joinedRDD.map(lambda (i, j, delij, ui, vj): (j, vj))
+    new_vj = joinedRDD.map(lambda (i, j, delij, ui, vj): (j, (gradient_v(delij,vj,ui) - 2*mu*vj)))\
+                    .reduceByKey(add, numPartitions=N)\
+                    .join(old_vj, numPartitions=N)\
+                    .map(lambda (j, (change, vj)): (j, vj - gamma*change))
+    return new_vj
 
 if __name__=="__main__":
 
@@ -243,8 +262,8 @@ if __name__=="__main__":
     parser.add_argument('--gain',default=0.001,type=float,help ="Gain")
     parser.add_argument('--power',default=0.2,type=float,help ="Gain Exponent")
     parser.add_argument('--epsilon',default=1.e-99,type=float,help ="Desired objective accuracy")
-    parser.add_argument('--lam',default=1.0,type=float,help ="Regularization parameter for user features")
-    parser.add_argument('--mu',default=1.0,type=float,help ="Regularization parameter for item features")
+    parser.add_argument('--lam',default=0.0,type=float,help ="Regularization parameter for user features")
+    parser.add_argument('--mu',default=0.0,type=float,help ="Regularization parameter for item features")
     parser.add_argument('--d',default=10,type=int,help ="Number of latent features")
     parser.add_argument('--outputfile',help = 'Output file')
     parser.add_argument('--maxiter',default=20,type=int, help='Maximum number of iterations')
