@@ -28,7 +28,7 @@ class SparseVector(dict):
   		<x,y>
 
         """
-        return sum( [self[key]*other[key]  for key in self if key in other])
+        return sum( [np.abs(self[key]*other[key])  for key in self if key in other])
 
 
     def norm(self,p=2):
