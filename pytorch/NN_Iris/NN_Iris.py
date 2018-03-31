@@ -1,12 +1,17 @@
 #Python3
+################################################################################
+# Example neural net using pytorch on classifying the Iris dataset
+
 import argparse
 import os
+from time import time
 from random import randint
 from DataRead import *
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 
 class Net(nn.Module):
@@ -17,18 +22,17 @@ class Net(nn.Module):
             - n_hidden (optional): number nodes in hidden layer (int)
         -- output: a nn.autograd.Variable of size n_out
     """
-
     def __init__(self, n_feature, n_out, n_hidden=10):
         super(Net, self).__init__()
         self.l1 = nn.Linear(n_feature, n_hidden)
-        self.l2 = nn.Linear(n_hidden, n_out)
+        self.l2 = nn.Linear(n_hidden, n_hidden)
+        self.l3 = nn.Linear(n_hidden, n_out)
 
     def forward(self, x):
         x = F.relu(self.l1(x))
-        #x = self.l2(x)
-        x = F.sigmoid(self.l2(x))
+        x = F.relu(self.l2(x))
+        x = F.sigmoid(self.l3(x)) #[0,1] activation, for BCELoss
         return x
-
 
 def predict(var):
     """ Converts Net output Variable into a onehot encoding
@@ -61,17 +65,25 @@ def metrics(outputs, labels):
     return accuracy, error_rate
 
 
-def train(net, data, epochs=5, learning_rate=0.02):
+def train(data, epochs=20, learning_rate=0.02):
     """ Train model (net) over kfolds:
-        -- net:          The neural net to train (nn.Module)
         -- data.folds:        The folds containing data to cross validate (dict)
         -- data.labels:       The corresponding labels to each fold (dict)
         -- epochs:       The number of times to run through one training set and
                          update net
        -- learning_rate: The gradient step size for learning
+
+       returns the best Net
     """
+    time_start = time()
+    net = Net(n_feature=4, n_out=3, n_hidden=10)
+    #save best net params [net,fold#,accuracy]
+    best_net = [net, 0, 0]
+    accuracies = [0 for x in range(0,data.num_folds)]
     #iterate over k folds with validation
     for k in range(0,data.num_folds):
+        #train a new net for each kfold cross validation
+        net = Net(n_feature=4, n_out=3, n_hidden=10)
         train_set = [data.folds[x] for x in range(0,data.num_folds) if x!=k]
         train_set = [y for x in train_set for y in x] #flatten list
         train_labels = [data.labels[x] for x in range(0,data.num_folds) if x!=k]
@@ -91,6 +103,7 @@ def train(net, data, epochs=5, learning_rate=0.02):
         #iterate through training set for epochs, save net params between epochs
         #compute losses from training set, save outputs for predictions
         for epoch_num in range(0,epochs):
+            #train
             outputs = [0 for x in range(0,len(train_set))]
             for datapoint in range(0,len(train_set)):
                 output = net(train_set[datapoint])
@@ -101,24 +114,43 @@ def train(net, data, epochs=5, learning_rate=0.02):
                 loss.backward()     #backpropogate and compute the gradients
                 optimizer.step()    #apply gradients
             accuracy, error_rate = metrics(outputs, train_labels)
-            print("Fold %i Epoch %i Accuracy=%f Error-Rate=%f" %
+            print("Fold %i Epoch %i TRAINING Accuracy=%f Error-Rate=%f" %
                   (k, epoch_num, accuracy, error_rate))
 
+            #test
+            outputs = [0 for x in range(0,len(test_set))]
+            for datapoint in range(0,len(test_set)):
+                output = net(test_set[datapoint])
+                outputs[datapoint] = output    #save output
+            accuracy, error_rate = metrics(outputs, test_labels)
+            print("Fold %i Epoch %i TESTING Accuracy=%f Error-Rate=%f" %
+                  (k, epoch_num, accuracy, error_rate))
 
+        #log final Accuracy
+        accuracies[k] = accuracy
+
+        #save best network
+        if accuracy > best_net[-1]:
+            best_net = [net, k, accuracy]
+    print("Average accuracy: %f" % (sum(accuracies)/len(accuracies)))
+    print("Saving Best Network:")
+    print("<network from fold%i with accuracy %f and error-rate %f>"
+          % (best_net[1], best_net[2], 1-best_net[2]))
+    print("Total Time = %fs" % (time() - time_start))
+
+    return best_net[0]
 
 
 if __name__ == "__main__":
-    net = Net(n_feature=4, n_out=3)
 
+    net = Net(n_feature=4, n_out=3)
     #print net architecture
     print(net)
     params = list(net.parameters())
-    print(len(params))
-    print(params[0].size())
 
     #create data class
     data = DataRead(input_directory='data/folds')
     data.onehot(labels_inc=['Iris-setosa','Iris-versicolor','Iris-virginica'])
     data.tensify()
 
-    train(net, data)
+    net = train(data, epochs=50)
